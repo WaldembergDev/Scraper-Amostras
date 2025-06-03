@@ -1,0 +1,3 @@
+# Desenvolver funcionalidade para logar na plataforma
+# Sair do sistema sempre após finalizar a automação
+# criar um script no windows para rodar a automação todo dia às 07h
