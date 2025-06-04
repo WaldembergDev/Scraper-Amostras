@@ -8,6 +8,7 @@ from selenium.webdriver.chrome.options import Options
 from datetime import date, timedelta
 from dotenv import load_dotenv
 from selenium.webdriver.common.keys import Keys
+from enviar_email import EnviarEmail
 import os
 import time
 
@@ -183,13 +184,13 @@ class AutomacaoAmostras():
             # Obtendo os dados
             dados = cls.obter_dados(driver)
             print('Dados obtidos')
-
-            return dados
+            
+            # enviando os dados por e-mail
+            EnviarEmail.enviar_email(dados)
+            
+            print('Automação finalizada!')
         except Exception as e:
             print(f'Erro: {e}')
         finally:
             if driver:
                 cls.sair_sistema(driver)
-    
-    
-
