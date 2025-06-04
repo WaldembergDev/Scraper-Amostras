@@ -8,7 +8,7 @@ from selenium.webdriver.chrome.options import Options
 from datetime import date, timedelta
 from dotenv import load_dotenv
 from selenium.webdriver.common.keys import Keys
-from enviar_email import EnviarEmail
+from src.service.enviar_email import EnviarEmail
 import os
 import time
 
@@ -126,7 +126,12 @@ class AutomacaoAmostras():
             WebDriverWait(driver, 10).until(
                 EC.element_to_be_clickable((By.XPATH, '//div[@class="drp-buttons"]//button[text()="Aplicar" and not(@disabled)]'))
                 ).click()
-            time.sleep(4)
+            time.sleep(3)
+            # mostrar 200 resultados por página
+            WebDriverWait(driver, 10).until(
+                EC.element_to_be_clickable((By.XPATH, '//div[@class="dataTables_length"]//select[@name="tableOrdemdeServico_length"]'))
+                ).send_keys(200)
+            time.sleep(3)
         except Exception as e:
             raise RuntimeError(f'Erro ao aplicar filtros: {e}')
     
