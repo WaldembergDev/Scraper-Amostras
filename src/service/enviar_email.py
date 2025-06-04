@@ -86,7 +86,7 @@ class EnviarEmail:
         msg = MIMEMultipart('alternative')
         msg['Subject'] = assunto
         msg['From'] = remetente
-        msg['To'] = 'ti@grupoqualityambiental.com.br'
+        msg['To'] = 'rayara@qualylab.com.br'
 
         msg.attach(MIMEText(corpo_html, 'html'))
         msg.attach(MIMEText(corpo_str, 'plain'))
