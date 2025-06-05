@@ -13,7 +13,7 @@ class EnviarEmail:
     @classmethod
     def criar_corpo_str(cls, dados: list):
         # Anexar uma versão de texto simples é uma boa prática
-        plain_text_body = f"Prezada, Rayara!,\n\nSegue a listagem de amostras que deverão ser liberadas hoje::\n\n"
+        plain_text_body = f"Prezados!,\n\nSegue a listagem de amostras que deverão ser liberadas hoje::\n\n"
         if not dados:
             plain_text_body += "Nenhum dado encontrado para o período.\n"
         else:
@@ -32,7 +32,7 @@ class EnviarEmail:
     <html>
         <head></head>
         <body>
-            <p>Prezada, Rayara!</p>
+            <p>Prezados,</p>
             <p>Segue a listagem de amostras que deverão ser liberadas hoje:</p>
             <table style="width:100%; border-collapse: collapse;">
                 <thead>
@@ -86,7 +86,7 @@ class EnviarEmail:
         msg = MIMEMultipart('alternative')
         msg['Subject'] = assunto
         msg['From'] = remetente
-        msg['To'] = 'rayara@qualylab.com.br'
+        msg['To'] = 'rayara@qualylab.com.br, gestaolab@qualylab.com.br'
 
         msg.attach(MIMEText(corpo_html, 'html'))
         msg.attach(MIMEText(corpo_str, 'plain'))
