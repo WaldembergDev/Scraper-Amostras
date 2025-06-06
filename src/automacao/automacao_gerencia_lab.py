@@ -142,8 +142,8 @@ class AutomacaoAmostras():
             # obtendo a lista de elementos
             lista_elementos = driver.find_elements(By.CSS_SELECTOR, '#tableOrdemdeServico tr.even, #tableOrdemdeServico tr.odd')
 
-            if len(lista_elementos) < 1:
-                print('Nenhum elemento foi encontrado')
+            if (len(lista_elementos) == 1) and (lista_elementos[0].text == 'Nenhum registro encontrado'):
+                print('Nenhum registro encontrado')
                 return []
 
             amostras = []
