@@ -93,10 +93,11 @@ class AutomacaoAmostras():
                 )
             time.sleep(4)
             # clicando no botão Limpar Pesquisa
-            WebDriverWait(driver, 10).until(
-                EC.element_to_be_clickable((By.XPATH, '//span[text()="Limpar Pesquisa"]'))
-                ).click()
-            time.sleep(3)
+            for i in range(2):
+                WebDriverWait(driver, 10).until(
+                    EC.element_to_be_clickable((By.XPATH, '//span[text()="Limpar Pesquisa"]'))
+                    ).click()
+                time.sleep(3)
             # clicando em visualizar colunas
             WebDriverWait(driver, 10).until(
                 EC.element_to_be_clickable((By.XPATH, '//button[@aria-controls="tableOrdemdeServico"]//span[text()="Visualizar Colunas"]'))
@@ -155,7 +156,7 @@ class AutomacaoAmostras():
                 
             return amostras
         except Exception as e:
-            raise RuntimeError(f'Erro ao obter os dados')
+            raise RuntimeError(f'Erro ao obter os dados: {e}')
     
     @classmethod
     def sair_sistema(cls, driver):
