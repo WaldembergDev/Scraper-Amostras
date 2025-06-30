@@ -22,7 +22,12 @@ class AutomacaoAmostras():
         amanha = hoje + timedelta(days=1)
         hoje_str = date.strftime(hoje, '%d/%m/%Y')
         amanha_str = date.strftime(amanha, '%d/%m/%Y')
-        periodo_str = (f'{hoje_str} - {amanha_str}')
+        if hoje.weekday() == 0:
+            sabado = hoje - timedelta(days=2)
+            sabado_str = date.strftime(sabado, '%d/%m/%Y')
+            periodo_str = (f'{sabado_str} - {amanha_str}')
+        else:
+            periodo_str = (f'{hoje_str} - {amanha_str}')
         return periodo_str
     
     @classmethod
