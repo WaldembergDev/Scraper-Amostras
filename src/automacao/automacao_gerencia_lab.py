@@ -148,8 +148,10 @@ class AutomacaoAmostras():
 
             amostras = []
             for linha in lista_elementos:
-                cliente = linha.find_elements(By.TAG_NAME, 'td')[4].text
                 status_os = linha.find_elements(By.TAG_NAME, 'td')[1].text
+                if status_os == 'Cancelada' or status_os == 'Em coleta':
+                    continue
+                cliente = linha.find_elements(By.TAG_NAME, 'td')[4].text
                 amostra = linha.find_elements(By.TAG_NAME, 'td')[2].text
                 prioridade = linha.find_elements(By.TAG_NAME, 'td')[3].text
                 amostras.append((status_os, amostra, cliente, prioridade))
