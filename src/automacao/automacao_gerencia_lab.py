@@ -18,17 +18,20 @@ load_dotenv()
 class AutomacaoAmostras():
     @classmethod
     def retornar_periodo(cls):
+        # obtendo os dados em formato date
         hoje = date.today()
         amanha = hoje + timedelta(days=1)
-        hoje_str = date.strftime(hoje, '%d/%m/%Y')
+        depois_de_amanha = hoje + timedelta(days=2)
+        terca = hoje + timedelta(days=4) 
+        # obtendo os dados em formato str
         amanha_str = date.strftime(amanha, '%d/%m/%Y')
-        if hoje.weekday() == 0:
-            sabado = hoje - timedelta(days=2)
-            sabado_str = date.strftime(sabado, '%d/%m/%Y')
-            periodo_str = (f'{sabado_str} - {amanha_str}')
+        depois_de_amanha_str = date.strftime(depois_de_amanha, '%d/%m/%Y')
+        terca_str = date.strftime(terca, '%d/%m/%Y')  
+        if hoje.weekday() == 4: # verificando se hoje é sexta
+            periodo = f'{amanha_str} - {terca_str}'
         else:
-            periodo_str = (f'{hoje_str} - {amanha_str}')
-        return periodo_str
+            periodo = f'{amanha_str} - {depois_de_amanha_str}'
+        return periodo
     
     @classmethod
     def obter_driver(cls):
@@ -37,7 +40,7 @@ class AutomacaoAmostras():
             usuario = os.getlogin()
             chrome_options = Options()
             chrome_options.add_argument(
-                f'user-data-dir=C:/Users/{usuario}/AppData/Local/Google/Chrome/Selenium'
+                f'C:/Users/{usuario}/AppData/Local/Google/Chrome/Selenium'
             )
             service = Service(ChromeDriverManager().install())
             driver = webdriver.Chrome(service=service, options=chrome_options)
@@ -151,16 +154,16 @@ class AutomacaoAmostras():
                 print('Nenhum registro encontrado')
                 return []
 
+            lista_status_os = ['Laboratorio', 'Em Revisão', 'Assinatura']
             amostras = []
             for linha in lista_elementos:
                 status_os = linha.find_elements(By.TAG_NAME, 'td')[1].text
-                if status_os == 'Cancelada' or status_os == 'Em coleta':
+                if not status_os in lista_status_os:
                     continue
                 cliente = linha.find_elements(By.TAG_NAME, 'td')[4].text
                 amostra = linha.find_elements(By.TAG_NAME, 'td')[2].text
                 prioridade = linha.find_elements(By.TAG_NAME, 'td')[3].text
                 amostras.append((status_os, amostra, cliente, prioridade))
-                
             return amostras
         except Exception as e:
             raise RuntimeError(f'Erro ao obter os dados: {e}')
