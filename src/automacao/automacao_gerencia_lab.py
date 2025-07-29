@@ -162,8 +162,9 @@ class AutomacaoAmostras():
                     continue
                 cliente = linha.find_elements(By.TAG_NAME, 'td')[4].text
                 amostra = linha.find_elements(By.TAG_NAME, 'td')[2].text
-                prioridade = linha.find_elements(By.TAG_NAME, 'td')[3].text
-                amostras.append((status_os, amostra, cliente, prioridade))
+                data_entrega = linha.find_elements(By.TAG_NAME, 'td')[5].text[0:10]
+                print(data_entrega)
+                amostras.append((status_os, amostra, cliente, data_entrega))
             return amostras
         except Exception as e:
             raise RuntimeError(f'Erro ao obter os dados: {e}')

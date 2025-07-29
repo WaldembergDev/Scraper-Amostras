@@ -17,8 +17,8 @@ class EnviarEmail:
         if not dados:
             plain_text_body += "Nenhum dado encontrado para o período.\n"
         else:
-            for status_os, amostra, cliente, prioridade in dados:
-                plain_text_body += f"Status OS: {status_os}, Amostra: {amostra}, Cliente: {cliente}, Prioridade: {prioridade}\n"
+            for status_os, amostra, cliente, entrega_prevista in dados:
+                plain_text_body += f"Status OS: {status_os}, Amostra: {amostra}, Cliente: {cliente}, Entrega Prevista: {entrega_prevista}\n"
         plain_text_body += "\nAtenciosamente,\nSua Automação"
 
         return plain_text_body
@@ -40,7 +40,7 @@ class EnviarEmail:
                         <th style="border: 1px solid black; padding: 8px; text-align: left;">Status OS</th>
                         <th style="border: 1px solid black; padding: 8px; text-align: left;">Amostra</th>
                         <th style="border: 1px solid black; padding: 8px; text-align: left;">Cliente</th>
-                        <th style="border: 1px solid black; padding: 8px; text-align: left;">Prioridade</th>
+                        <th style="border: 1px solid black; padding: 8px; text-align: left;">Entrega Prevista</th>
                     </tr>
                 </thead>
                 <tbody>
