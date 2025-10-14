@@ -17,8 +17,8 @@ class EnviarEmail:
         if not dados:
             plain_text_body += "Nenhum dado encontrado para o período.\n"
         else:
-            for status_os, amostra, cliente, entrega_prevista in dados:
-                plain_text_body += f"Status OS: {status_os}, Amostra: {amostra}, Cliente: {cliente}, Entrega Prevista: {entrega_prevista}\n"
+            for status_os, amostra, solicitante, cliente, entrega_prevista in dados:
+                plain_text_body += f"Status OS: {status_os}, Amostra: {amostra}, Solicitante: {solicitante} Cliente: {cliente}, Entrega Prevista: {entrega_prevista}\n"
         plain_text_body += "\nAtenciosamente,\nSua Automação"
 
         return plain_text_body
@@ -39,17 +39,19 @@ class EnviarEmail:
                     <tr style="background-color: #f2f2f2;">
                         <th style="border: 1px solid black; padding: 8px; text-align: left;">Status OS</th>
                         <th style="border: 1px solid black; padding: 8px; text-align: left;">Amostra</th>
+                        <th style="border: 1px solid black; padding: 8px; text-align: left;">Solicitante</th>
                         <th style="border: 1px solid black; padding: 8px; text-align: left;">Cliente</th>
                         <th style="border: 1px solid black; padding: 8px; text-align: left;">Entrega Prevista</th>
                     </tr>
                 </thead>
                 <tbody>
     """ 
-        for status_os, amostra, cliente, prioridade in dados:
+        for status_os, amostra, solicitante, cliente, prioridade in dados:
             html_content += f"""
         <tr>
             <td style="border: 1px solid black; padding: 8px;">{status_os}</td>
             <td style="border: 1px solid black; padding: 8px;">{amostra}</td>
+            <td style="border: 1px solid black; padding: 8px;">{solicitante}</td>
             <td style="border: 1px solid black; padding: 8px;">{cliente}</td>
             <td style="border: 1px solid black; padding: 8px;">{prioridade}</td>
         </tr>
@@ -86,7 +88,7 @@ class EnviarEmail:
         msg = MIMEMultipart('alternative')
         msg['Subject'] = assunto
         msg['From'] = remetente
-        msg['To'] = 'rayara@qualylab.com.br, gestaolab@qualylab.com.br, ti@grupoqualityambiental.com.br, financeiro@grupoqualityambiental.com.br, adm@qualylab.com.br, servicosanaliticos@qualylab.com.br'
+        msg['To'] = 'rayara@qualylab.com.br, gestaolab@qualylab.com.br, ti@grupoqualityambiental.com.br, financeiro@grupoqualityambiental.com.br, adm@qualylab.com.br, servicosanaliticos@qualylab.com.br, expedicao@qualylab.com.br'
 
         msg.attach(MIMEText(corpo_html, 'html'))
         msg.attach(MIMEText(corpo_str, 'plain'))

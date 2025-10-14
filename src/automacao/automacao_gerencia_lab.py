@@ -91,7 +91,7 @@ class AutomacaoAmostras():
 
     @classmethod
     def aplicar_configuracoes(cls, driver):
-        colunas = ['Ordem Serviço', 'Status O.S', 'Referência', 'Prioridade', 'Cliente', 'Data de Entrega']
+        colunas = ['Ordem Serviço', 'Status O.S', 'Referência', 'Prioridade', 'Cliente', 'Data de Entrega', 'Solicitante']
         try:
             # indo para ordens de serviço
             driver.get("https://qualylab.gerencialab.com.br/service-order")
@@ -160,11 +160,11 @@ class AutomacaoAmostras():
                 status_os = linha.find_elements(By.TAG_NAME, 'td')[1].text
                 if not status_os in lista_status_os:
                     continue
-                cliente = linha.find_elements(By.TAG_NAME, 'td')[4].text
+                solicitante = linha.find_elements(By.TAG_NAME, 'td')[4].text
+                cliente = linha.find_elements(By.TAG_NAME, 'td')[5].text
                 amostra = linha.find_elements(By.TAG_NAME, 'td')[2].text
-                data_entrega = linha.find_elements(By.TAG_NAME, 'td')[5].text[0:10]
-                print(data_entrega)
-                amostras.append((status_os, amostra, cliente, data_entrega))
+                data_entrega = linha.find_elements(By.TAG_NAME, 'td')[6].text[0:10]
+                amostras.append((status_os, amostra, solicitante, cliente, data_entrega))
             return amostras
         except Exception as e:
             raise RuntimeError(f'Erro ao obter os dados: {e}')
