@@ -34,6 +34,29 @@ class AutomacaoAmostras():
         return periodo
     
     @classmethod
+    def retornar_periodo_pier(cls):
+        # obtendo os dados em formato date
+        hoje = date.today()
+        amanha = hoje + timedelta(days=1)
+        hoje_mais_tres = hoje + timedelta(days=3)
+        # obtendo os dados em formato str
+        amanha_str = date.strftime(amanha, '%d/%m/%Y')
+        hoje_mais_tres_str = date.strftime(hoje_mais_tres, '%d/%m/%Y')
+        # convertendo para o formato do gerencia
+        periodo = f'{amanha_str} - {hoje_mais_tres_str}'
+        return periodo
+    
+    @classmethod
+    def retornar_periodo_atrasados(cls):
+        hoje = date.today()
+        uma_semana_atras = hoje - timedelta(days=7)
+        hoje_str = date.strftime(hoje, '%d/%m/%Y')
+        uma_semana_atras_str = date.strftime(uma_semana_atras, '%d/%m/%Y')
+        periodo = f'{uma_semana_atras_str} - {hoje_str}'
+        return periodo
+        
+    
+    @classmethod
     def obter_driver(cls):
         try:
             # obtendo o usuário logado
@@ -90,7 +113,7 @@ class AutomacaoAmostras():
             raise RuntimeError(f'Erro ao realizar login no sistema: {e}')
 
     @classmethod
-    def aplicar_configuracoes(cls, driver):
+    def aplicar_configuracoes(cls, driver, periodo=None):
         colunas = ['Ordem Serviço', 'Status O.S', 'Referência', 'Prioridade', 'Cliente', 'Data de Entrega', 'Solicitante']
         try:
             # indo para ordens de serviço
@@ -129,7 +152,7 @@ class AutomacaoAmostras():
                 EC.element_to_be_clickable((By.XPATH, '//*[@id="dataPrazoEntregaOSForm"]'))
                 )
             # preenchendo o campo data de entrega
-            campo_data.send_keys(cls.retornar_periodo())
+            campo_data.send_keys(cls.retornar_periodo() if periodo is None else periodo)
             time.sleep(3)
             # clicando em aplicar
             WebDriverWait(driver, 10).until(
@@ -140,32 +163,42 @@ class AutomacaoAmostras():
             WebDriverWait(driver, 10).until(
                 EC.element_to_be_clickable((By.XPATH, '//div[@class="dataTables_length"]//select[@name="tableOrdemdeServico_length"]'))
                 ).send_keys(200)
-            time.sleep(3)
+            time.sleep(3)                
         except Exception as e:
             raise RuntimeError(f'Erro ao aplicar filtros: {e}')
-    
+
+
     @classmethod
-    def obter_dados(cls, driver):
+    def obter_dados(cls, driver, cliente_excluido=None, cliente_selecionado=None):
         try:        
-            # obtendo a lista de elementos
-            lista_elementos = driver.find_elements(By.CSS_SELECTOR, '#tableOrdemdeServico tr.even, #tableOrdemdeServico tr.odd')
-
-            if (len(lista_elementos) == 1) and (lista_elementos[0].text == 'Nenhum registro encontrado'):
-                print('Nenhum registro encontrado')
-                return []
-
-            lista_status_os = ['Laboratorio', 'Em Revisão', 'Assinatura']
             amostras = []
-            for linha in lista_elementos:
-                status_os = linha.find_elements(By.TAG_NAME, 'td')[1].text
-                if not status_os in lista_status_os:
-                    continue
-                solicitante = linha.find_elements(By.TAG_NAME, 'td')[4].text
-                cliente = linha.find_elements(By.TAG_NAME, 'td')[5].text
-                amostra = linha.find_elements(By.TAG_NAME, 'td')[2].text
-                data_entrega = linha.find_elements(By.TAG_NAME, 'td')[6].text[0:10]
-                amostras.append((status_os, amostra, solicitante, cliente, data_entrega))
-            return amostras
+            while True:
+                lista_elementos = driver.find_elements(By.CSS_SELECTOR, '#tableOrdemdeServico tr.even, #tableOrdemdeServico tr.odd')
+                if (len(lista_elementos) == 1) and (lista_elementos[0].text == 'Nenhum registro encontrado'):
+                            print('Nenhum registro encontrado')
+                            break
+                lista_status_os = ['Laboratorio', 'Em Revisão', 'Assinatura']
+                for linha in lista_elementos:
+                    status_os = linha.find_elements(By.TAG_NAME, 'td')[1].text
+                    if not status_os in lista_status_os:
+                        continue
+                    solicitante = linha.find_elements(By.TAG_NAME, 'td')[4].text
+                    cliente = linha.find_elements(By.TAG_NAME, 'td')[5].text
+                    if cliente_selecionado and cliente_selecionado != cliente:
+                        continue
+                    if cliente == cliente_excluido:
+                        continue
+                    amostra = linha.find_elements(By.TAG_NAME, 'td')[2].text
+                    data_entrega = linha.find_elements(By.TAG_NAME, 'td')[6].text[0:10]
+                    amostras.append((status_os, amostra, solicitante, cliente, data_entrega))
+                # verificando se é possível passar para a próxima página:
+                elementos_de_navegacao = driver.find_elements(By.XPATH, "//li[contains(@class, 'paginate_button ')]")
+                if len(elementos_de_navegacao) == 3:
+                    break
+                # passando para a próxima página
+                driver.find_element(By.XPATH, "//li[@class='paginate_button page-item next']//a").click()
+                time.sleep(3)
+                return amostras
         except Exception as e:
             raise RuntimeError(f'Erro ao obter os dados: {e}')
     
@@ -183,7 +216,7 @@ class AutomacaoAmostras():
             print('Navegador Fechado')
     
     @classmethod
-    def iniciar_automacao(cls):
+    def iniciar_automacao_geral(cls):
         driver = None
         try:
             # iniciando o driver
@@ -199,11 +232,75 @@ class AutomacaoAmostras():
             print('Aplicado filtros e configurações')
 
             # Obtendo os dados
+            dados = cls.obter_dados(driver, cliente_excluido='PIER MAUA S/A ( )')
+            print('Dados obtidos')
+            
+            # enviando os dados por e-mail
+            complemento = 'Geral'
+            EnviarEmail.enviar_email(dados, complemento=complemento)
+            
+            print('Automação finalizada!')
+        except Exception as e:
+            print(f'Erro: {e}')
+        finally:
+            if driver:
+                cls.sair_sistema(driver)
+    
+    @classmethod
+    def iniciar_automacao_pier(cls):
+        driver = None
+        try:
+            # iniciando o driver
+            driver = cls.obter_driver()
+            print('Driver Inicializado')
+
+            # Realizando login
+            cls.logar(driver)
+            print('Logado')
+
+            # Aplicando as configurações
+            cls.aplicar_configuracoes(driver, periodo=cls.retornar_periodo_pier())
+            print('Aplicado filtros e configurações')
+
+            # Obtendo os dados
+            dados = cls.obter_dados(driver, cliente_selecionado='PIER MAUA S/A ( )')
+            print('Dados obtidos')
+            
+            # enviando os dados por e-mail
+            complemento = 'Pier'
+            EnviarEmail.enviar_email(dados, complemento=complemento)
+            
+            print('Automação finalizada!')
+        except Exception as e:
+            print(f'Erro: {e}')
+        finally:
+            if driver:
+                cls.sair_sistema(driver)
+    
+    @classmethod
+    def iniciar_automacao_atrasados(cls):
+        driver = None
+        try:
+            # iniciando o driver
+            driver = cls.obter_driver()
+            print('Driver Inicializado')
+
+            # Realizando login
+            cls.logar(driver)
+            print('Logado')
+
+            # Aplicando as configurações
+            cls.aplicar_configuracoes(driver, periodo=cls.retornar_periodo_atrasados())
+            print('Aplicado filtros e configurações')
+
+            # Obtendo os dados
             dados = cls.obter_dados(driver)
             print('Dados obtidos')
             
             # enviando os dados por e-mail
-            EnviarEmail.enviar_email(dados)
+            # assunto
+            complemento = 'Atrasados'
+            EnviarEmail.enviar_email(dados, complemento=complemento)
             
             print('Automação finalizada!')
         except Exception as e:
