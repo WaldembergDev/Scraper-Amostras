@@ -67,7 +67,7 @@ class EnviarEmail:
         return html_content
 
     @classmethod
-    def enviar_email(cls, dados: list):
+    def enviar_email(cls, dados: list, assunto=None):
         # Configurações do servidor SMTP
         servidor = os.getenv('SERVIDOR_ZOHO')
         porta = os.getenv('PORTA')
@@ -79,7 +79,7 @@ class EnviarEmail:
         data_hoje = date.today()
         data_hoje_str = date.strftime(data_hoje, '%d-%m-%Y')
         remetente = usuario
-        assunto = f'Liberações do dia {data_hoje_str}'
+        assunto = assunto if assunto else f'Liberações do dia {data_hoje_str}'
         # criando corpo html
         corpo_html =  cls.criar_corpo_html(dados)
         corpo_str = cls.criar_corpo_str(dados)
@@ -88,7 +88,8 @@ class EnviarEmail:
         msg = MIMEMultipart('alternative')
         msg['Subject'] = assunto
         msg['From'] = remetente
-        msg['To'] = 'rayara@qualylab.com.br, gestaolab@qualylab.com.br, ti@grupoqualityambiental.com.br, financeiro@grupoqualityambiental.com.br, adm@qualylab.com.br, servicosanaliticos@qualylab.com.br, expedicao@qualylab.com.br'
+        # msg['To'] = 'rayara@qualylab.com.br, gestaolab@qualylab.com.br, ti@grupoqualityambiental.com.br, financeiro@grupoqualityambiental.com.br, adm@qualylab.com.br, servicosanaliticos@qualylab.com.br, expedicao@qualylab.com.br'
+        msg['To'] = 'waldemberg@grupoqualityambiental.com.br'
 
         msg.attach(MIMEText(corpo_html, 'html'))
         msg.attach(MIMEText(corpo_str, 'plain'))
