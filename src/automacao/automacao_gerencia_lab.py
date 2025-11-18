@@ -184,9 +184,11 @@ class AutomacaoAmostras():
                         continue
                     solicitante = linha.find_elements(By.TAG_NAME, 'td')[4].text
                     cliente = linha.find_elements(By.TAG_NAME, 'td')[5].text
-                    if cliente_selecionado and cliente_selecionado != cliente:
+                    if 'Gerencialab' in cliente:
                         continue
-                    if cliente == cliente_excluido:
+                    if cliente_selecionado is not None and cliente_selecionado != cliente:
+                            continue
+                    if cliente_excluido is not None and cliente_excluido == cliente:
                         continue
                     amostra = linha.find_elements(By.TAG_NAME, 'td')[2].text
                     data_entrega = linha.find_elements(By.TAG_NAME, 'td')[6].text[0:10]
@@ -198,7 +200,7 @@ class AutomacaoAmostras():
                 # passando para a próxima página
                 driver.find_element(By.XPATH, "//li[@class='paginate_button page-item next']//a").click()
                 time.sleep(3)
-                return amostras
+            return amostras
         except Exception as e:
             raise RuntimeError(f'Erro ao obter os dados: {e}')
     
