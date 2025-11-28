@@ -1,3 +1,4 @@
+import datetime
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.service import Service
@@ -5,7 +6,7 @@ from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.chrome.options import Options
-from datetime import date, timedelta
+from datetime import datetime, date, timedelta
 from dotenv import load_dotenv
 from selenium.webdriver.common.keys import Keys
 from src.service.enviar_email import EnviarEmail
@@ -37,13 +38,13 @@ class AutomacaoAmostras():
     def retornar_periodo_pier(cls):
         # obtendo os dados em formato date
         hoje = date.today()
-        amanha = hoje + timedelta(days=1)
-        hoje_mais_tres = hoje + timedelta(days=3)
+        hoje_menos_cinco = hoje - timedelta(days=5)
+        hoje_mais_cinco = hoje + timedelta(days=5)
         # obtendo os dados em formato str
-        amanha_str = date.strftime(amanha, '%d/%m/%Y')
-        hoje_mais_tres_str = date.strftime(hoje_mais_tres, '%d/%m/%Y')
+        hoje_menos_cinco_str = date.strftime(hoje_menos_cinco, '%d/%m/%Y')
+        hoje_mais_cinco_str = date.strftime(hoje_mais_cinco, '%d/%m/%Y')
         # convertendo para o formato do gerencia
-        periodo = f'{amanha_str} - {hoje_mais_tres_str}'
+        periodo = f'{hoje_menos_cinco_str} - {hoje_mais_cinco_str}'
         return periodo
     
     @classmethod
@@ -113,8 +114,9 @@ class AutomacaoAmostras():
             raise RuntimeError(f'Erro ao realizar login no sistema: {e}')
 
     @classmethod
-    def aplicar_configuracoes(cls, driver, periodo=None):
-        colunas = ['Ordem Serviço', 'Status O.S', 'Referência', 'Prioridade', 'Cliente', 'Data de Entrega', 'Solicitante']
+    def aplicar_configuracoes(cls, driver, periodo=None, tipo_periodo=None):
+        colunas = ['Ordem Serviço', 'Status O.S', 'Referência', 'Prioridade', 'Cliente', 'Solicitante']
+        colunas += ['Data da Coleta'] if tipo_periodo == 'Data da Coleta' else ['Data de Entrega']
         try:
             # indo para ordens de serviço
             driver.get("https://qualylab.gerencialab.com.br/service-order")
@@ -147,11 +149,18 @@ class AutomacaoAmostras():
             # fechando a tela das visualizações de colunas
             driver.find_element(By.TAG_NAME, 'body').send_keys(Keys.ESCAPE)
             time.sleep(3)
-            # obtendo o campo da data de entrega
-            campo_data = WebDriverWait(driver, 10).until(
-                EC.element_to_be_clickable((By.XPATH, '//*[@id="dataPrazoEntregaOSForm"]'))
-                )
-            # preenchendo o campo data de entrega
+            # obtendo o campo da data
+            if 'Data da Coleta' in colunas:
+                # caso seja a data de coleta
+                campo_data = WebDriverWait(driver, 10).until(
+                    EC.element_to_be_clickable((By.XPATH, '//*[@id="dataPrazoColetaOSForm"]'))
+                    )
+            else:
+                # caso seja a data da entrega
+                campo_data = WebDriverWait(driver, 10).until(
+                    EC.element_to_be_clickable((By.XPATH, '//*[@id="dataPrazoEntregaOSForm"]'))
+                    )
+            # preenchendo o campo data
             campo_data.send_keys(cls.retornar_periodo() if periodo is None else periodo)
             time.sleep(3)
             # clicando em aplicar
@@ -170,7 +179,7 @@ class AutomacaoAmostras():
 
     @classmethod
     def obter_dados(cls, driver, cliente_excluido=None, cliente_selecionado=None):
-        try:        
+        try:
             amostras = []
             while True:
                 lista_elementos = driver.find_elements(By.CSS_SELECTOR, '#tableOrdemdeServico tr.even, #tableOrdemdeServico tr.odd')
@@ -184,14 +193,19 @@ class AutomacaoAmostras():
                         continue
                     solicitante = linha.find_elements(By.TAG_NAME, 'td')[4].text
                     cliente = linha.find_elements(By.TAG_NAME, 'td')[5].text
+                    data_entrega = linha.find_elements(By.TAG_NAME, 'td')[6].text[0:10]
                     if 'Gerencialab' in cliente:
                         continue
                     if cliente_selecionado is not None and cliente_selecionado != cliente:
                             continue
                     if cliente_excluido is not None and cliente_excluido == cliente:
                         continue
+                    if cliente == 'PIER MAUA S/A ( )':
+                        formato_string = '%d/%m/%Y'
+                        data_convertida = datetime.strptime(data_entrega, formato_string).date()
+                        data_convertida_mais_dois = data_convertida + timedelta(days=2)
+                        data_entrega = datetime.strftime(data_convertida_mais_dois, '%d/%m/%Y')
                     amostra = linha.find_elements(By.TAG_NAME, 'td')[2].text
-                    data_entrega = linha.find_elements(By.TAG_NAME, 'td')[6].text[0:10]
                     amostras.append((status_os, amostra, solicitante, cliente, data_entrega))
                 # verificando se é possível passar para a próxima página:
                 elementos_de_navegacao = driver.find_elements(By.XPATH, "//li[contains(@class, 'paginate_button ')]")
@@ -234,7 +248,7 @@ class AutomacaoAmostras():
             print('Aplicado filtros e configurações')
 
             # Obtendo os dados
-            dados = cls.obter_dados(driver, cliente_excluido='PIER MAUA S/A ( )')
+            dados = cls.obter_dados(driver, cliente_selecionado=None, cliente_excluido='PIER MAUA S/A ( )')
             print('Dados obtidos')
             
             # enviando os dados por e-mail
@@ -261,7 +275,7 @@ class AutomacaoAmostras():
             print('Logado')
 
             # Aplicando as configurações
-            cls.aplicar_configuracoes(driver, periodo=cls.retornar_periodo_pier())
+            cls.aplicar_configuracoes(driver, periodo=cls.retornar_periodo_pier(), tipo_periodo='Data da Coleta')
             print('Aplicado filtros e configurações')
 
             # Obtendo os dados
