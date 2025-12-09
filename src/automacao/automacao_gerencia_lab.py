@@ -358,7 +358,7 @@ class AutomacaoAmostras():
             whatsapp = EnviarWhatsapp()
             # amostras.append((status_os, amostra, solicitante, cliente, data_entrega))
             mensagem = f'Amostra a ser liberada: \nOS - {dados[0]}\nAmostra - {dados[1]}\nCliente - {dados[3]}\nData de entrega - {dados[4]}'
-            whatsapp.enviar_mensagem('21974002929', mensagem)
+            whatsapp.enviar_mensagem(destinatario_whatsapp, mensagem)
             
             print('Automação finalizada!')
         except Exception as e:
