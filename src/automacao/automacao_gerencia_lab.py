@@ -10,11 +10,14 @@ from datetime import datetime, date, timedelta
 from dotenv import load_dotenv
 from selenium.webdriver.common.keys import Keys
 from src.service.enviar_email import EnviarEmail
+from src.service.enviar_whatsapp import EnviarWhatsapp
 import os
 import time
 
 # carregando as variáveis de ambiente
 load_dotenv()
+
+destinatario_whatsapp = os.getenv('DESTINATARIO_WHATSAPP')
 
 class AutomacaoAmostras():
     @classmethod
@@ -60,14 +63,19 @@ class AutomacaoAmostras():
     @classmethod
     def obter_driver(cls):
         try:
-            # obtendo o usuário logado
-            usuario = os.getlogin()
-            chrome_options = Options()
-            chrome_options.add_argument(
-                f'C:/Users/{usuario}/AppData/Local/Google/Chrome/Selenium'
-            )
-            service = Service(ChromeDriverManager().install())
-            driver = webdriver.Chrome(service=service, options=chrome_options)
+            nome_sistema = os.name
+            # verificando se é Windows
+            if nome_sistema == 'nt':
+                # obtendo o usuário logado
+                usuario = os.getlogin()
+                chrome_options = Options()
+                chrome_options.add_argument(
+                    f'C:/Users/{usuario}/AppData/Local/Google/Chrome/Selenium'
+                )
+                service = Service(ChromeDriverManager().install())
+                driver = webdriver.Chrome(service=service, options=chrome_options)
+            else:
+                driver = webdriver.Chrome()
 
             # maximixando a tela
             driver.maximize_window()
@@ -317,6 +325,40 @@ class AutomacaoAmostras():
             # assunto
             complemento = 'Atrasados'
             EnviarEmail.enviar_email(dados, complemento=complemento)
+            
+            print('Automação finalizada!')
+        except Exception as e:
+            print(f'Erro: {e}')
+        finally:
+            if driver:
+                cls.sair_sistema(driver)
+    
+
+    @classmethod
+    def iniciar_automacao_pier_whatsapp(cls):
+        driver = None
+        try:
+            # iniciando o driver
+            driver = cls.obter_driver()
+            print('Driver Inicializado')
+
+            # Realizando login
+            cls.logar(driver)
+            print('Logado')
+
+            # Aplicando as configurações
+            cls.aplicar_configuracoes(driver, periodo=cls.retornar_periodo_pier(), tipo_periodo='Data da Coleta')
+            print('Aplicado filtros e configurações')
+
+            # Obtendo os dados
+            dados = cls.obter_dados(driver, cliente_selecionado='PIER MAUA S/A ( )')
+            print('Dados obtidos')
+            
+            # enviando os dados por whatsapp
+            whatsapp = EnviarWhatsapp()
+            # amostras.append((status_os, amostra, solicitante, cliente, data_entrega))
+            mensagem = f'Amostra a ser liberada: \nOS - {dados[0]}\nAmostra - {dados[1]}\nCliente - {dados[3]}\nData de entrega - {dados[4]}'
+            whatsapp.enviar_mensagem('21974002929', mensagem)
             
             print('Automação finalizada!')
         except Exception as e:

@@ -89,7 +89,6 @@ class EnviarEmail:
         msg['Subject'] = assunto
         msg['From'] = remetente
         msg['To'] = 'rayara@qualylab.com.br, gestaolab@qualylab.com.br, ti@grupoqualityambiental.com.br, financeiro@grupoqualityambiental.com.br, adm@qualylab.com.br, servicosanaliticos@qualylab.com.br, expedicao@qualylab.com.br'
-        
         msg.attach(MIMEText(corpo_html, 'html'))
         msg.attach(MIMEText(corpo_str, 'plain'))
 
