@@ -358,9 +358,11 @@ class AutomacaoAmostras():
             whatsapp = EnviarWhatsapp()
             # amostras.append((status_os, amostra, solicitante, cliente, data_entrega))
             if dados:
-                mensagem = f'Amostra a ser liberada: \nOS - {dados[0]}\nAmostra - {dados[1]}\nCliente - {dados[3]}\nData de entrega - {dados[4]}'
+                mensagem = f'*Notificação Pier*: \nQuantidade de amostras a serem liberadas: {len(dados)}\nRelação da(s) amostra(s):'
+                for amostra in dados:
+                    mensagem += f"\n\nStatus OS - {amostra[0]}\nAmostra - {amostra[1]}\nCliente - {amostra[3]}\nData de entrega - {amostra[4]}\n\n"
             else:
-                mensagem = "Não há laudo a ser liberado"
+                mensagem = "*Notificação Pier*:\nNão há laudo a ser liberado"
             whatsapp.enviar_mensagem(destinatario_whatsapp, mensagem)
             
             print('Automação finalizada!')
