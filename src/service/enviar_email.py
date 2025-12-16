@@ -17,8 +17,8 @@ class EnviarEmail:
         if not dados:
             plain_text_body += "Nenhum dado encontrado para o período.\n"
         else:
-            for status_os, amostra, solicitante, cliente, entrega_prevista in dados:
-                plain_text_body += f"Status OS: {status_os}, Amostra: {amostra}, Solicitante: {solicitante} Cliente: {cliente}, Entrega Prevista: {entrega_prevista}\n"
+            for status_amostra, amostra, solicitante, cliente, entrega_prevista in dados:
+                plain_text_body += f"Status OS: {status_amostra}, Amostra: {amostra}, Solicitante: {solicitante} Cliente: {cliente}, Entrega Prevista: {entrega_prevista}\n"
         plain_text_body += "\nAtenciosamente,\nSua Automação"
 
         return plain_text_body
@@ -37,7 +37,7 @@ class EnviarEmail:
             <table style="width:100%; border-collapse: collapse;">
                 <thead>
                     <tr style="background-color: #f2f2f2;">
-                        <th style="border: 1px solid black; padding: 8px; text-align: left;">Status OS</th>
+                        <th style="border: 1px solid black; padding: 8px; text-align: left;">Status Amostra</th>
                         <th style="border: 1px solid black; padding: 8px; text-align: left;">Amostra</th>
                         <th style="border: 1px solid black; padding: 8px; text-align: left;">Solicitante</th>
                         <th style="border: 1px solid black; padding: 8px; text-align: left;">Cliente</th>
@@ -46,10 +46,10 @@ class EnviarEmail:
                 </thead>
                 <tbody>
     """ 
-        for status_os, amostra, solicitante, cliente, prioridade in dados:
+        for status_amostra, amostra, solicitante, cliente, prioridade in dados:
             html_content += f"""
         <tr>
-            <td style="border: 1px solid black; padding: 8px;">{status_os}</td>
+            <td style="border: 1px solid black; padding: 8px;">{status_amostra}</td>
             <td style="border: 1px solid black; padding: 8px;">{amostra}</td>
             <td style="border: 1px solid black; padding: 8px;">{solicitante}</td>
             <td style="border: 1px solid black; padding: 8px;">{cliente}</td>

@@ -123,7 +123,7 @@ class AutomacaoAmostras():
 
     @classmethod
     def aplicar_configuracoes(cls, driver, periodo=None, tipo_periodo=None):
-        colunas = ['Ordem Serviço', 'Status O.S', 'Referência', 'Prioridade', 'Cliente', 'Solicitante']
+        colunas = ['Ordem Serviço', 'Status O.S', 'Status Amostra', 'Referência', 'Prioridade', 'Cliente', 'Solicitante']
         colunas += ['Data da Coleta'] if tipo_periodo == 'Data da Coleta' else ['Data de Entrega']
         try:
             # indo para ordens de serviço
@@ -194,14 +194,14 @@ class AutomacaoAmostras():
                 if (len(lista_elementos) == 1) and (lista_elementos[0].text == 'Nenhum registro encontrado'):
                             print('Nenhum registro encontrado')
                             break
-                lista_status_os = ['Laboratorio', 'Em Revisão', 'Assinatura']
+                lista_status_amostra = ['Laboratório']
                 for linha in lista_elementos:
-                    status_os = linha.find_elements(By.TAG_NAME, 'td')[1].text
-                    if not status_os in lista_status_os:
+                    status_amostra = linha.find_elements(By.TAG_NAME, 'td')[3].text
+                    if not status_amostra in lista_status_amostra:
                         continue
-                    solicitante = linha.find_elements(By.TAG_NAME, 'td')[4].text
-                    cliente = linha.find_elements(By.TAG_NAME, 'td')[5].text
-                    data_entrega = linha.find_elements(By.TAG_NAME, 'td')[6].text[0:10]
+                    solicitante = linha.find_elements(By.TAG_NAME, 'td')[5].text
+                    cliente = linha.find_elements(By.TAG_NAME, 'td')[6].text
+                    data_entrega = linha.find_elements(By.TAG_NAME, 'td')[7].text[0:10]
                     if 'Gerencialab' in cliente:
                         continue
                     if cliente_selecionado is not None and cliente_selecionado != cliente:
@@ -214,7 +214,7 @@ class AutomacaoAmostras():
                         data_convertida_mais_dois = data_convertida + timedelta(days=2)
                         data_entrega = datetime.strftime(data_convertida_mais_dois, '%d/%m/%Y')
                     amostra = linha.find_elements(By.TAG_NAME, 'td')[2].text
-                    amostras.append((status_os, amostra, solicitante, cliente, data_entrega))
+                    amostras.append((status_amostra, amostra, solicitante, cliente, data_entrega))
                 # verificando se é possível passar para a próxima página:
                 elementos_de_navegacao = driver.find_elements(By.XPATH, "//li[contains(@class, 'paginate_button ')]")
                 if len(elementos_de_navegacao) == 3:
@@ -356,11 +356,11 @@ class AutomacaoAmostras():
             
             # enviando os dados por whatsapp
             whatsapp = EnviarWhatsapp()
-            # amostras.append((status_os, amostra, solicitante, cliente, data_entrega))
+
             if dados:
                 mensagem = f'*Notificação Pier*: \nQuantidade de amostras a serem liberadas: {len(dados)}\nRelação da(s) amostra(s):'
                 for amostra in dados:
-                    mensagem += f"\n\nStatus OS - {amostra[0]}\nAmostra - {amostra[1]}\nCliente - {amostra[3]}\nData de entrega - {amostra[4]}\n\n"
+                    mensagem += f"\n\nStatus Amostra - {amostra[0]}\nAmostra - {amostra[1]}\nCliente - {amostra[3]}\nData de entrega - {amostra[4]}\n\n"
             else:
                 mensagem = "*Notificação Pier*:\nNão há laudo a ser liberado"
             whatsapp.enviar_mensagem(destinatario_whatsapp, mensagem)
