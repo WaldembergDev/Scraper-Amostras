@@ -194,10 +194,10 @@ class AutomacaoAmostras():
                 if (len(lista_elementos) == 1) and (lista_elementos[0].text == 'Nenhum registro encontrado'):
                             print('Nenhum registro encontrado')
                             break
-                lista_status_amostra = ['Laboratório']
+                ignorar_status_amostra = ['Concluído', 'Cancelada', 'Aguardando']
                 for linha in lista_elementos:
-                    status_amostra = linha.find_elements(By.TAG_NAME, 'td')[3].text
-                    if not status_amostra in lista_status_amostra:
+                    status_amostra = linha.find_elements(By.TAG_NAME, 'td')[3].text.strip()
+                    if status_amostra in ignorar_status_amostra:
                         continue
                     solicitante = linha.find_elements(By.TAG_NAME, 'td')[5].text
                     cliente = linha.find_elements(By.TAG_NAME, 'td')[6].text
