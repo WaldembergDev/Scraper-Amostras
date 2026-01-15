@@ -5,8 +5,9 @@ if __name__ == "__main__":
     automacoes = [
         AutomacaoAmostras.iniciar_automacao_geral(),
         AutomacaoAmostras.iniciar_automacao_pier(),
-        AutomacaoAmostras.iniciar_automacao_atrasados()
+        AutomacaoAmostras.iniciar_automacao_atrasados(),
+        AutomacaoAmostras.iniciar_automacao_analise_ar()
         ]
     for automacao in automacoes:
         automacao
-        time.sleep(40)
+        time.sleep(10)

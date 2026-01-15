@@ -58,6 +58,17 @@ class AutomacaoAmostras():
         uma_semana_atras_str = date.strftime(uma_semana_atras, '%d/%m/%Y')
         periodo = f'{uma_semana_atras_str} - {hoje_str}'
         return periodo
+    
+    @classmethod
+    def retornar_periodo_coleta_ar(cls):
+        hoje = date.today()
+        uma_semana_atras = hoje - timedelta(days=7)
+        uma_semana_atras_mais_um = uma_semana_atras + timedelta(days=1)
+        uma_semana_atras_str = date.strftime(uma_semana_atras, '%d/%m/%Y')
+        uma_semana_atras_mais_um_str = date.strftime(uma_semana_atras_mais_um, '%d/%m/%Y')
+        periodo = f'{uma_semana_atras_str} - {uma_semana_atras_mais_um_str}'
+        return periodo
+
         
     
     @classmethod
@@ -124,7 +135,10 @@ class AutomacaoAmostras():
     @classmethod
     def aplicar_configuracoes(cls, driver, periodo=None, tipo_periodo=None):
         colunas = ['Ordem Serviço', 'Status O.S', 'Status Amostra', 'Referência', 'Prioridade', 'Cliente', 'Solicitante']
-        colunas += ['Data da Coleta'] if tipo_periodo == 'Data da Coleta' else ['Data de Entrega']
+        if tipo_periodo is None:
+            colunas.append('Data de Entrega')
+        else:
+            colunas.append(tipo_periodo)
         try:
             # indo para ordens de serviço
             driver.get("https://qualylab.gerencialab.com.br/service-order")
@@ -163,10 +177,15 @@ class AutomacaoAmostras():
                 campo_data = WebDriverWait(driver, 10).until(
                     EC.element_to_be_clickable((By.XPATH, '//*[@id="dataPrazoColetaOSForm"]'))
                     )
-            else:
+            elif 'Data de Entrega' in colunas:
                 # caso seja a data da entrega
                 campo_data = WebDriverWait(driver, 10).until(
                     EC.element_to_be_clickable((By.XPATH, '//*[@id="dataPrazoEntregaOSForm"]'))
+                    )
+            else:
+                # caso seja a data da entrega
+                campo_data = WebDriverWait(driver, 10).until(
+                    EC.element_to_be_clickable((By.XPATH, '//*[@id="dataPrazoEntradaOSForm"]'))
                     )
             # preenchendo o campo data
             campo_data.send_keys(cls.retornar_periodo() if periodo is None else periodo)
@@ -183,6 +202,47 @@ class AutomacaoAmostras():
             time.sleep(3)                
         except Exception as e:
             raise RuntimeError(f'Erro ao aplicar filtros: {e}')
+    
+    @classmethod
+    def obter_lista_os(cls, driver):
+        lista_os = []
+        while True:
+            # Esperar a tabela carregar para evitar StaleElement
+            WebDriverWait(driver, 10).until(
+                EC.presence_of_element_located((By.CSS_SELECTOR, '#tableOrdemdeServico tbody tr'))
+            )
+            
+            lista_elementos = driver.find_elements(By.CSS_SELECTOR, '#tableOrdemdeServico tr.even, #tableOrdemdeServico tr.odd')
+            
+            # Verifica se não há registros
+            if len(lista_elementos) > 0:
+                primeira_coluna = lista_elementos[0].find_elements(By.TAG_NAME, 'td')
+                if len(primeira_coluna) > 0 and primeira_coluna[0].text == 'Nenhum registro encontrado':
+                    print('Nenhum registro encontrado na listagem inicial.')
+                    break
+
+            for linha in lista_elementos:
+                colunas = linha.find_elements(By.TAG_NAME, 'td')
+                if colunas:
+                    os_num = colunas[0].text
+                    if os_num not in lista_os:
+                        lista_os.append(os_num)
+            
+            # Paginação
+            elementos_de_navegacao = driver.find_elements(By.XPATH, "//li[contains(@class, 'paginate_button ')]")
+            # Lógica simples de paginação baseada no seu código (ajuste se necessário)
+            if len(elementos_de_navegacao) <= 3: 
+                break
+            
+            # Tenta ir para próxima página
+            try:
+                next_btn = driver.find_element(By.XPATH, "//li[@class='paginate_button page-item next']//a")
+                next_btn.click()
+                time.sleep(3)
+            except:
+                break # Não tem botão next ou falhou
+        return lista_os
+        
 
 
     @classmethod
@@ -368,6 +428,134 @@ class AutomacaoAmostras():
             print('Automação finalizada!')
         except Exception as e:
             print(f'Erro: {e}')
+        finally:
+            if driver:
+                cls.sair_sistema(driver)
+    
+
+    @classmethod
+    def obter_dados_ar(cls, driver, lista_os):
+        try:
+            amostras = []
+
+            # 2. Iterar sobre cada OS coletada
+            driver.get('https://qualylab.gerencialab.com.br/service-order')
+            WebDriverWait(driver, 30).until(EC.presence_of_element_located((By.XPATH, '//h4[text()="Ordem serviços"]')))
+            time.sleep(2)
+
+            for os_num in lista_os:
+                try:
+                    # Limpar pesquisa anterior
+                    driver.find_element(By.XPATH, '//span[text()="Limpar Pesquisa"]').click()
+                    time.sleep(1)
+                    
+                    # Pesquisar a OS específica
+                    input_os = driver.find_element(By.XPATH, '//thead//th[contains(text(),"Ordem Serviço ")]//input')
+                    input_os.clear()
+                    input_os.send_keys(os_num)
+                    input_os.send_keys(Keys.ENTER)
+                    time.sleep(2)
+
+                    # Pegar a linha resultante
+                    linhas = driver.find_elements(By.XPATH, '//table[@id="tableOrdemdeServico"]//tbody//tr')
+                    if not linhas:
+                        continue
+
+                    cols = linhas[0].find_elements(By.TAG_NAME, 'td')
+                    if len(cols) < 12: 
+                        continue
+
+                    # Coletar dados iniciais da tabela principal
+                    data_entrada_str = cols[12].text[0:10]
+                    if data_entrada_str == 'Aguardando':
+                        continue
+                    
+                    numero_amostra = cols[5].text
+                    solicitante = cols[8].text
+                    status_amostra = cols[6].text
+                    cliente = cols[9].text
+                    
+                    # Entrar nos detalhes
+                    linhas[0].click()
+                    driver.find_element(By.XPATH, '//div[@class="btn-group"]//span[text()="Visualizar"]').click()
+                    time.sleep(1)
+                    driver.find_element(By.XPATH, '//div[@class="dt-button-collection dropdown-menu"]//a[1]').click() # Visualizar O.S
+                    time.sleep(3)
+
+                    # Aumentar visualização da tabela interna
+                    try:
+                        driver.find_element(By.XPATH, '//div[@class="dataTables_length"]//select[@name="tableListaOrdemServico_length"]').send_keys('200')
+                        time.sleep(2)
+                    except:
+                        pass
+
+                    # Varrer tabela interna para achar Grupo == 'Ar'
+                    lista_amostras_interna = driver.find_elements(By.XPATH, '//table[@id="tableListaOrdemServico"]//tbody//tr')
+                    
+                    for row_amostra in lista_amostras_interna:
+                        cols_interna = row_amostra.find_elements(By.TAG_NAME, 'td')
+                        if len(cols_interna) > 3:
+                            amostra_grupo = cols_interna[3].text
+                            
+                            if amostra_grupo == 'Ar':
+                                data_entrada = datetime.strptime(data_entrada_str, '%d/%m/%Y')
+                                # data_entrega = data_entrada + timedelta(days=7)
+                                data_entrada_str = data_entrada.strftime('%d/%m/%Y')
+                                
+                                amostras.append((status_amostra, numero_amostra, solicitante, cliente, data_entrada_str))
+                    
+                    # Voltar para a lista principal
+                    driver.find_element(By.XPATH, '//button//span[text()="Voltar"]').click()
+                    time.sleep(2)
+
+                except Exception as e_loop:
+                    print(f"Erro ao processar OS {os_num}: {e_loop}")
+                    # Tenta voltar para garantir que o loop continue
+                    driver.get('https://qualylab.gerencialab.com.br/service-order')
+                    time.sleep(3)
+
+            return amostras
+
+        except Exception as e:
+            raise RuntimeError(f'Erro ao obter dados de Análise de Ar: {e}')
+
+    @classmethod
+    def iniciar_automacao_analise_ar(cls):
+        driver = None
+        try:
+            print('--- Iniciando Automação Análise de Ar ---')
+            driver = cls.obter_driver()
+            print('Driver Inicializado')
+
+            cls.logar(driver)
+            print('Logado')
+
+            periodo = cls.retornar_periodo_coleta_ar()
+            cls.aplicar_configuracoes(driver, periodo=periodo, tipo_periodo='Data da Entrada')
+            print(f'Filtros aplicados. Período: {periodo}')
+
+            # obtendo a lista de os
+            lista_os = cls.obter_lista_os(driver)
+
+            # obtendo os dados
+            dados = cls.obter_dados_ar(driver, lista_os)
+            print(f'Dados obtidos: {len(dados)} registros de Ar encontrados.')
+
+            # Envio de e-mail
+            complemento = 'Análise de Ar'
+            lista_emails_ar = ['rayara@qualylab.com.br',
+                               'relatorios@grupoqualityambiental.com.br',
+                               'gestaolab@qualylab.com.br']
+            EnviarEmail.enviar_email(dados, 
+                complemento=complemento, 
+                destinatarios=lista_emails_ar,
+                tipo_relatorio='analise_ar'
+                )
+            
+            print('Automação de Ar finalizada com sucesso!')
+
+        except Exception as e:
+            print(f'Erro na automação de Ar: {e}')
         finally:
             if driver:
                 cls.sair_sistema(driver)
